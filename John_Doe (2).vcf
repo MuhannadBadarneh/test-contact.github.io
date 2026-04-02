@@ -1,0 +1,12 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:John Doe
+N:Doe;John;;;
+ORG:Acme Inc.
+TITLE:Senior Product Designer
+TEL;TYPE=CELL:+11234567890
+EMAIL;TYPE=WORK:john@acmeinc.com
+URL:https://johndoe.com
+ADR;TYPE=WORK:;;San Francisco, CA, USA;;;;
+NOTE:Scanned via digital business card
+END:VCARD
