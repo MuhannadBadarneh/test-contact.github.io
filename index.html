@@ -165,7 +165,7 @@
   <button class="save-btn" id="saveBtn" onclick="saveContact()">
     <span id="btnText">⬇ Save to Contacts</span>
   </button>
-  <div class="footer">Tap to save · vCard 3.0</div>
+  <div class="footer" id="footerNote">Tap to save · vCard 3.0</div>
 </div>
 
 <script>
@@ -184,6 +184,7 @@
     note:           "Scanned via digital business card"
   };
 
+  // Populate UI
   document.getElementById('initials').textContent  = contact.firstName[0] + contact.lastName[0];
   document.getElementById('fullname').textContent  = contact.fullName;
   document.getElementById('jobtitle').textContent  = contact.title + ' · ' + contact.company;
@@ -219,12 +220,40 @@
     const isIOS     = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
     if (isAndroid) {
-      // Navigate directly — Chrome passes text/x-vcard to the Contacts app
-      window.location.href = "data:text/x-vcard;charset=utf-8," + encodeURIComponent(vcard);
+      // Strategy 1: Android Intent URI
+      // Tells Chrome to fire android.intent.action.VIEW with MIME type text/x-vcard
+      // which the OS routes directly to the Contacts app "Add contact" dialog.
+      // The vCard data is embedded as a base64 data URI in the intent's data field.
+      const encoded = encodeURIComponent(vcard);
+      const intentUrl =
+        "intent:data:text/x-vcard;charset=utf-8," + encoded +
+        "#Intent;" +
+        "action=android.intent.action.VIEW;" +
+        "type=text%2Fx-vcard;" +
+        "end";
+
+      // Use a hidden anchor so Chrome processes it as a navigation intent
+      const a = document.createElement("a");
+      a.href = intentUrl;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // Fallback: if intent didn't open Contacts after 1.5s, try data URI directly
+      setTimeout(function() {
+        // Only fallback if the page is still visible (intent didn't navigate away)
+        if (!document.hidden) {
+          document.getElementById('footerNote').textContent = 'If dialog did not open, tap the button again';
+          // Fallback: data URI navigation
+          window.location.href = "data:text/x-vcard;charset=utf-8," + encoded;
+        }
+      }, 1500);
+
     } else if (isIOS) {
-      // Blob with text/vcard triggers native "Add Contact" sheet in Safari
+      // iOS Safari: blob with text/vcard triggers native "Add Contact" sheet
       const blob = new Blob([vcard], { type: "text/vcard" });
       window.location.href = URL.createObjectURL(blob);
+
     } else {
       // Desktop: download the .vcf file
       const blob = new Blob([vcard], { type: "text/vcard" });
@@ -239,10 +268,10 @@
     }
 
     document.getElementById('saveBtn').classList.add('saved');
-    document.getElementById('btnText').textContent = '✓ Contact Saved';
+    document.getElementById('btnText').textContent = '✓ Opening Contacts...';
   }
 
-  // Auto-trigger on page load
+  // Auto-trigger on load
   window.addEventListener('load', saveContact);
 </script>
 </body>
